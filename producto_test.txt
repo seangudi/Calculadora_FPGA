@@ -1,0 +1,91 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.numeric_std.ALL;
+ 
+ENTITY producto_test IS
+END producto_test;
+ 
+ARCHITECTURE behavior OF producto_test IS 
+ 
+    -- Component Declaration for the Unit Under Test (UUT)
+ 
+    COMPONENT Producto
+    PORT(
+         a : IN  std_logic_vector(3 downto 0);
+         b : IN  std_logic_vector(3 downto 0);
+         p : OUT  std_logic_vector(3 downto 0);
+         p_sig : OUT  std_logic;
+         overflow : OUT  std_logic
+        );
+    END COMPONENT;
+    
+
+   --Inputs
+   signal a : std_logic_vector(3 downto 0) := (others => '0');
+   signal b : std_logic_vector(3 downto 0) := (others => '0');
+
+ 	--Outputs
+   signal p : std_logic_vector(3 downto 0);
+   signal p_sig : std_logic;
+   signal overflow : std_logic;
+ 
+BEGIN
+ 
+	-- Instantiate the Unit Under Test (UUT)
+   uut: Producto PORT MAP (
+          a => a,
+          b => b,
+          p => p,
+          p_sig => p_sig,
+          overflow => overflow
+        );
+ 
+
+   -- Stimulus process
+   stim_proc: process
+   begin		
+-- Doble loop para valores de señales de entrada 'a' y 'b'
+	for avar in -7 to 7 loop
+	
+		--Se convierte el valor de avar en sig-mag
+		if avar < 0 then
+			a <= '1'& std_logic_vector(to_unsigned(abs(avar),3));
+		else 
+			a <= '0'& std_logic_vector(to_unsigned(abs(avar),3));
+		end if;
+		
+		for bvar in -7 to 7 loop
+		--Se convierte el valor de avar en sig-mag
+			if bvar < 0 then
+				b <= '1'& std_logic_vector(to_unsigned(abs(bvar),3));
+			else 
+				b <= '0'& std_logic_vector(to_unsigned(abs(bvar),3));
+			end if;
+		
+			-- Tiempo de espera
+			wait for 1 ns;
+			
+			-- Se comprueba magnitud
+			if abs(avar*bvar) <= 15 then
+				assert p = std_logic_vector(to_unsigned(abs(avar*bvar),4)) report "MAGNITUD INCORRECTA" severity failure;
+			else -- se comprueba que diga 'overflow'
+				assert overflow = '1' report "NO INFORMA OVERFLOW" severity failure;
+			end if;
+				
+			
+			-- Se comprueba signo (No se analiza el numero '0')
+			if avar*bvar < 0 then
+				assert p_sig = '0' report "bit de signo NEGATIVO MAL " severity failure;
+			elsif avar*bvar > 0 then
+				assert p_sig = '1' report "bit de signo POSITIVO MAL" severity failure;
+			end if;
+
+		end loop;
+	
+	end loop;
+	
+	-- Mensaje de exito
+	assert false report "------------ EXITO --------------" severity failure;
+   end process;
+
+END; 
